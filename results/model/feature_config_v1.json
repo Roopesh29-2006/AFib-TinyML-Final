@@ -1,0 +1,22 @@
+{
+    "model_name": "PPG_Rhythm_LogisticRegression_v1",
+    "window_seconds": 30,
+    "sampling_rate_hz": 125,
+    "features": [
+        "mean_ibi",
+        "median_ibi",
+        "std_ibi",
+        "min_ibi",
+        "max_ibi",
+        "iqr_ibi",
+        "cv_ibi",
+        "mean_abs_diff",
+        "std_diff",
+        "rmssd",
+        "beat_count",
+        "suspicious_ibi_fraction",
+        "missing_fraction"
+    ],
+    "positive_class": "AF",
+    "negative_class": "Non-AF"
+}

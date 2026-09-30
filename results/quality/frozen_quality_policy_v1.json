@@ -1,0 +1,33 @@
+{
+    "quality_metrics": [
+        "ppg_std",
+        "ppg_range",
+        "prominence_mean",
+        "prominence_cv",
+        "valid_ibi_fraction"
+    ],
+    "thresholds": {
+        "ppg_std": {
+            "low": 0.04539520967611447,
+            "high": 0.3092421125183772
+        },
+        "ppg_range": {
+            "low": 0.2291736371566981,
+            "high": 2.070461098697835
+        },
+        "prominence_mean": {
+            "low": 0.10810840048459298,
+            "high": 0.7856589937629805
+        },
+        "prominence_cv": {
+            "low": 0.08045019415275165,
+            "high": 0.5785386218705804
+        },
+        "valid_ibi_fraction": {
+            "low": 0.9824561403508772,
+            "high": 1.0
+        }
+    },
+    "minimum_quality_flags": 0,
+    "selection_rule": "minimum validation selective error subject to >=70% coverage"
+}

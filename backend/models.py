@@ -127,6 +127,7 @@ class WindowResultMessage(BaseModel):
     quality: Literal["GOOD", "POOR", "UNKNOWN"] = "UNKNOWN"
     motion_context: Literal["REST", "LOW_MOTION", "HIGH_MOTION"] = "REST"
     motion_source: Literal["simulated", "mpu6050"] = "simulated"
+    inference_source: Optional[str] = None
 
     # Extended ESP32 fields (forwarded verbatim — never computed in Python)
     reason: Optional[str] = None              # e.g. SIGNAL_USABLE, POOR_PPG_QUALITY, HIGH_MOTION
@@ -161,6 +162,7 @@ class SystemStatusMessage(BaseModel):
     session_start: float        # UNIX epoch of session start
     simulated_motion: bool      # True until MPU6050 is live
     motion_state: Literal["REST", "LOW_MOTION", "HIGH_MOTION"] = "REST"
+    mode: Optional[Literal["LIVE", "SIMULATED_DEMO"]] = None
 
 
 class LogEventMessage(BaseModel):

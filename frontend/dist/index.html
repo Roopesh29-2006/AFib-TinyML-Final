@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Real-time PPG-based AFib screening research dashboard for ESP32 + MAX30100. TinyML window inference. Not a medical diagnostic device." />
+    <title>AFib TinyML Monitor — Research Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-Bd1wu6yG.js"></script>
+      <script>
+        (() => {
+          const rewriteBackendUrl = (url) =>
+            typeof url === "string" ? url.replace("localhost:8000", "localhost:8002") : url;
+          const nativeFetch = window.fetch.bind(window);
+          window.fetch = (input, init) => nativeFetch(rewriteBackendUrl(input), init);
+          const NativeWebSocket = window.WebSocket;
+          window.WebSocket = new Proxy(NativeWebSocket, {
+            construct(target, args) {
+              args[0] = rewriteBackendUrl(args[0]);
+              return Reflect.construct(target, args);
+            },
+          });
+        })();
+      </script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C54CidWn.css">
+  </head>
+  <body style="font-family: 'Inter', system-ui, sans-serif; background: #030712;">
+    <div id="root"></div>
+  </body>
+</html>

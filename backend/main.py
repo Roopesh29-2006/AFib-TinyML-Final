@@ -37,6 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from serial_manager import SerialManager
+from demo_simulator import DemoScenario, DemoSimulator
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -53,9 +54,10 @@ logger = logging.getLogger("afib.main")
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     # --- startup ---
-    global _serial_manager
+    global _serial_manager, _demo_simulator
     loop = asyncio.get_running_loop()
     _serial_manager = SerialManager(ws_manager.broadcast, loop)
+    _demo_simulator = DemoSimulator(ws_manager.broadcast)
     logger.info("AFib TinyML Monitor backend started")
     logger.info("WebSocket endpoint: ws://localhost:8000/ws")
 
@@ -68,6 +70,8 @@ async def lifespan(application: FastAPI):
     yield  # application runs here
 
     # --- shutdown ---
+    if _demo_simulator:
+        await _demo_simulator.stop()
     if _serial_manager and _serial_manager.connected:
         await _serial_manager.disconnect()
 
@@ -158,12 +162,19 @@ ws_manager = ConnectionManager()
 # ---------------------------------------------------------------------------
 
 _serial_manager: Optional[SerialManager] = None
+_demo_simulator: Optional[DemoSimulator] = None
 
 
 def get_serial() -> SerialManager:
     if _serial_manager is None:
         raise RuntimeError("Serial manager not initialised")
     return _serial_manager
+
+
+def get_demo() -> DemoSimulator:
+    if _demo_simulator is None:
+        raise RuntimeError("Demo simulator not initialised")
+    return _demo_simulator
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +194,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
         "session_start": serial.state.session_start,
         "simulated_motion": serial.state.simulated_motion,
         "motion_state": serial.state.motion_state,
+        "mode": "SIMULATED_DEMO" if get_demo().active else "LIVE",
     }))
     try:
         while True:
@@ -213,7 +225,41 @@ async def api_status() -> dict:
         "window_id": serial.state.window_id,
         "valid_ibi_count": serial.state.valid_ibi_count,
         "rejected_ibi_count": serial.state.rejected_ibi_count,
+        "demo_mode": get_demo().active,
+        "mode": "SIMULATED_DEMO" if get_demo().active else "LIVE",
+        "demo_scenario": get_demo().scenario if get_demo().active else None,
     }
+
+
+class DemoStartRequest(BaseModel):
+    scenario: DemoScenario = "clean"
+
+
+@app.get("/api/demo/status")
+async def api_demo_status() -> dict:
+    demo = get_demo()
+    return {
+        "active": demo.active,
+        "mode": "SIMULATED_DEMO" if demo.active else "LIVE",
+        "scenario": demo.scenario if demo.active else None,
+    }
+
+
+@app.post("/api/demo/start")
+async def api_demo_start(req: DemoStartRequest = DemoStartRequest()) -> dict:
+    serial = get_serial()
+    if serial.connected:
+        await serial.disconnect()
+    demo = get_demo()
+    await demo.start(req.scenario)
+    return {"active": demo.active, "mode": "SIMULATED_DEMO", "scenario": demo.scenario}
+
+
+@app.post("/api/demo/stop")
+async def api_demo_stop() -> dict:
+    demo = get_demo()
+    await demo.stop()
+    return {"active": demo.active, "mode": "LIVE"}
 
 
 @app.get("/api/ports")
@@ -229,6 +275,14 @@ class ConnectRequest(BaseModel):
 
 @app.post("/api/connect")
 async def api_connect(req: ConnectRequest) -> dict:
+    demo = get_demo()
+    if demo.active:
+        return {
+            "connected": False,
+            "port": None,
+            "demo_mode": True,
+            "message": "SIMULATED_DEMO is active; hardware connection was skipped",
+        }
     serial = get_serial()
     await serial.connect(req.port, req.baud)
     return {"connected": serial.connected, "port": serial.port}
